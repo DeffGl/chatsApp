@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta charset="UTF-8">
+    <title>Список чатов</title>
+</head>
+<body>
+<h1 class="d-flex justify-content-center my-4">Список чатов</h1>
+<div class="container">
+    <div class="d-flex justify-content-center">
+        <table th:replace="table.html :: #chatList"></table>
+    </div>
+    <div class="d-flex">
+        <div class="mb-3 form-floating flex-fill" style="margin-right: 10px; width: 558px;">
+            <input type="text" class="form-control" id="chatNameForCreate" placeholder=" ">
+            <label for="chatNameForCreate" class="form-control"
+                   style="background-color: transparent; padding-top: 16px;">Введите название чата, который вы хотели бы
+                создать</label>
+            <div class="d-flex justify-content-md-end my-3">
+                <div id="errorMessagesForCreate" class="text-danger" style="flex: 1"></div>
+                <button id="createChatButton" class="btn btn-light">Создать чат</button>
+            </div>
+        </div>
+        <div class="mb-3 form-floating flex-fill ml-2" style="width: 558px;">
+
+            <input type="text" class="form-control" id="chatNameForChoose" placeholder=" ">
+            <label for="chatNameForChoose" class="form-control"
+                   style="background-color: transparent; padding-top: 16px;">Введите название чата, который вы хотели бы
+                выбрать</label>
+
+            <div class="d-flex justify-content-md-end my-3">
+                <div id="errorMessagesForChoose" class="text-danger" style="flex: 1"></div>
+                <button id="chooseChatButton" class="btn btn-light">Выбрать чат</button>
+            </div>
+        </div>
+    </div>
+    <div th:replace="chat.html :: #chat">
+    </div>
+</div>
+</body>
+</html>
+
+<script>
+    $(document).ready(function () {
+        $("#createChatButton").click(function () {
+            var chatName = $("#chatNameForCreate").val();
+
+            if (chatName && chatName.length <= 255) {
+                var chatData = {"chatName": chatName};
+                var token = $("meta[name='_csrf']").attr("content");
+                var header = $("meta[name='_csrf_header']").attr("content");
+                var headers = {};
+                headers[header] = token;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/chats",
+                    contentType: "application/json",
+                    data: JSON.stringify(chatData),
+                    headers: headers,
+                    success: function (data) {
+                        console.info(data);
+                        updateChatList();
+                        $("#errorMessagesForCreate").empty();
+                    },
+                    error: function (data) {
+                        console.error("Ошибка при создании чата:", data);
+                        var response = JSON.parse(data.responseText)
+                        $("#errorMessagesForCreate").html(response.message);
+                    }
+                });
+            } else {
+                alert("Введите название чата длинной не более 255 символов!");
+            }
+        });
+
+        function updateChatList() {
+            $.ajax({
+                type: "GET",
+                url: "/chats",
+                success: function (data) {
+                    $("#chatList").html(data);
+                },
+                error: function (error) {
+                    console.error("Ошибка при обновлении списка чатов:", error);
+                }
+            });
+        }
+
+
+    });
+    $(document).ready(function () {
+        $("#chooseChatButton").click(function () {
+            var chatName = $("#chatNameForChoose").val();
+            if (chatName && chatName.length <= 255) {
+                var token = $("meta[name='_csrf']").attr("content");
+                var header = $("meta[name='_csrf_header']").attr("content");
+                var headers = {};
+                headers[header] = token;
+
+                $.ajax({
+                    type: "GET",
+                    url: "/chat/" + chatName,
+                    headers: headers,
+                    success: function (data) {
+                        $("#chat").html(data);
+                        $("#errorMessagesForChoose").empty();
+                    },
+                    error: function (data) {
+                        console.error("Ошибка при выборе чата:", data);
+                        var response = JSON.parse(data.responseText)
+                        $("#errorMessagesForChoose").html(response.message);
+                    }
+                });
+            } else {
+                alert("Введите название чата длинной не более 255 символов!");
+            }
+        });
+    });
+</script>

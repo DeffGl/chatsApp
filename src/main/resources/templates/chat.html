@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="chat">
+    <h2 th:if="${chat != null}">Выбран чат: <span id="nameSelectedChat" th:text="${chat.getChatName()}"></span></h2>
+    <div id class="d-flex mt-3 mb-3" th:if="${chat != null}">
+        <div class="flex-fill" style="margin-right: 10px; width: 500px;">
+            <textarea class="form-control" id="message" rows="4" placeholder="Введите сообщение"></textarea>
+            <div class="d-flex justify-content-md-end my-3">
+                <button id="sendMessageButton" class="btn btn-light">Отправить</button>
+            </div>
+        </div>
+        <div id="messages" class="flex-fill" style="overflow: auto; height: 500px; width: 500px;">
+            <ul class="list-group" id="message-list">
+                <li class="list-group-item" th:each="message : ${chat.getMessageList()}" style="word-wrap: break-word;">
+                    <strong th:text="${message.getAuthorMessage() + ': '}" style="font-weight: bold"></strong><br/>
+                    <span th:text="${message.getText()}"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script>
+    var chatName = $("#nameSelectedChat").text();
+    $(document).ready(function () {
+        $("#sendMessageButton").click(function () {
+            var message = $("#message").val();
+            if (message && message.length <= 4096) {
+                var messageData = {
+                    "chat": {
+                        "chatName": chatName
+                    },
+                    "text": message,
+                };
+                var token = $("meta[name='_csrf']").attr("content");
+                var header = $("meta[name='_csrf_header']").attr("content");
+                var headers = {};
+                headers[header] = token;
+
+                $.ajax({
+                    type: "POST",
+                    url: "/message",
+                    contentType: "application/json",
+                    data: JSON.stringify(messageData),
+                    headers: headers,
+                    success: function (data) {
+                        updateMessageList();
+                    },
+                    error: function (error) {
+                        console.error("Ошибка при отправке сообщения:", error);
+                    }
+                });
+            } else {
+                alert("Введите сообщение длинной не более 4096 символов!");
+            }
+        });
+
+        function updateMessageList() {
+            var currentScrollPosition = $('#messages').scrollTop();
+            console.log(currentScrollPosition);
+            $.ajax({
+                type: "GET",
+                url: "/chat/" + chatName,
+                success: function (data) {
+                    $("#chat").html(data);
+                    $('#messages').scrollTop(currentScrollPosition);
+                },
+                error: function (error) {
+                    console.error("Ошибка при обновлении списка чатов:", error);
+                }
+            });
+        }
+    });
+</script>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<table id="chatList" class="table table-bordered table-hover table-light">
+    <thead>
+    <tr>
+        <th>Название чата</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="chat : ${chats}">
+        <td th:text="${chat.chatName}"></td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
